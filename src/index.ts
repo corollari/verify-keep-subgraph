@@ -26,24 +26,32 @@ function consolidateVotes(ops: Operator[], property: "owner" | "address") {
   return score;
 }
 
-function sortOperators(op1: Operator, op2: Operator) {
+function sortOperators(
+  op1: Omit<Operator, "stakedAmount">,
+  op2: Omit<Operator, "stakedAmount">
+) {
   if (op1.address < op2.address) {
     return -1;
   } else if (op1.owner > op2.owner) {
     return 1;
   } else {
-    if(op1.address<op2.address){
-        return -1;
-    } else if(op1.address>op2.address){
-        return 1;
+    if (op1.address < op2.address) {
+      return -1;
+    } else if (op1.address > op2.address) {
+      return 1;
     } else {
-        return 0
+      return 0;
     }
   }
 }
 
 function processOpsForFullComparison(ops: Operator[]) {
-  return ops.sort(sortOperators).map(({owner, address})=>({owner, address}));
+  return ops
+    .map(({ owner, address }) => ({
+      owner: getAddress(owner),
+      address: getAddress(address),
+    }))
+    .sort(sortOperators);
 }
 
 function processOpsForOperatorComparison(ops: Operator[]) {
@@ -58,12 +66,29 @@ function processOpsForOperatorComparison(ops: Operator[]) {
   const subgraphOps = await getAllSubgraphOperators(block);
   //console.log(etherOps, etherOps.sort(sortOperators))
   assert.deepStrictEqual(
-    processOpsForFullComparison(subgraphOps),
-    processOpsForFullComparison(etherOps)
+    processOpsForOperatorComparison(etherOps),
+    processOpsForOperatorComparison(subgraphOps)
   );
+  const graph = processOpsForFullComparison(subgraphOps);
+  const eth = processOpsForFullComparison(etherOps);
+  for (let i = 0; i < subgraphOps.length; i++) {
+    if (eth[i].owner === "0xDa534b567099Ca481384133bC121D5843F681365") {
+      console.log("TokenStakingEscrow");
+    } else if (eth[i].owner === "0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b") {
+      console.log("StakingPortBacker");
+    } else if (graph[i].owner !== eth[i].owner) {
+      console.log(graph[i].owner, eth[i].owner);
+    }
+    try {
+      assert.deepStrictEqual(graph[i].address, eth[i].address);
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+  assert.deepStrictEqual(graph, eth);
   const subgraphVotes = consolidateVotes(subgraphOps, "owner");
   const ethersVotes = await ethersVoteCount(subgraphOps, block).then((votes) =>
     consolidateVotes(votes, "owner")
   );
-  assert.deepStrictEqual(snapshotVotesTest, ethersVotes);
+  assert.deepStrictEqual(subgraphVotes, ethersVotes);
 })();
