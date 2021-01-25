@@ -74,10 +74,12 @@ function processOpsForOperatorComparison(ops: Operator[]) {
   for (let i = 0; i < subgraphOps.length; i++) {
     if (eth[i].owner === "0xDa534b567099Ca481384133bC121D5843F681365") {
       console.log("TokenStakingEscrow");
+      console.log(eth[i].address, eth[i].owner);
     } else if (eth[i].owner === "0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b") {
       console.log("StakingPortBacker");
+      console.log(eth[i].address, eth[i].owner);
     } else if (graph[i].owner !== eth[i].owner) {
-      console.log(graph[i].owner, eth[i].owner);
+      console.log(graph[i].address, graph[i].owner, eth[i].owner);
     }
     try {
       assert.deepStrictEqual(graph[i].address, eth[i].address);
