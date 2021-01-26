@@ -27,12 +27,9 @@ function consolidateVotes(ops: Operator[], property: "owner" | "address") {
   return score;
 }
 
-type NoAmountOperator = Omit<Operator, "stakedAmount">
+type NoAmountOperator = Omit<Operator, "stakedAmount">;
 
-function sortOperators(
-  op1: NoAmountOperator,
-  op2: NoAmountOperator
-) {
+function sortOperators(op1: NoAmountOperator, op2: NoAmountOperator) {
   if (op1.address < op2.address) {
     return -1;
   } else if (op1.owner > op2.owner) {
@@ -77,10 +74,10 @@ function processOpsForOperatorComparison(ops: NoAmountOperator[]) {
   const eth = processOpsForFullComparison(etherOps);
   for (let i = 0; i < subgraphOps.length; i++) {
     try {
-        assert.deepStrictEqual(graph[i].address, eth[i].address);
-      } catch (e) {
-        console.warn(e);
-      }
+      assert.deepStrictEqual(graph[i].address, eth[i].address);
+    } catch (e) {
+      console.warn(e);
+    }
     if (eth[i].owner === "0xDa534b567099Ca481384133bC121D5843F681365") {
       console.log("TokenStakingEscrow");
       console.log(eth[i].address, eth[i].owner);
