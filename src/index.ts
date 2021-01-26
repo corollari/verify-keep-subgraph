@@ -6,8 +6,9 @@ import {
 import assert from "assert";
 import ethersVoteCount from "./ethersVoteCount";
 import getProposalBock from "./getProposalBlock";
-import { getAllOperators } from "./getEthersOperators";
-import snapshotVotesTest from "./snapshotVotesTest";
+import { getAllOperators as getEthersOperators } from "./getEthersOperators";
+import { getAllOperators as getTbtcJsOperators } from "./getTbtcJsOperators";
+import snapshotVotesTest from "./data/snapshotVotesTest";
 import { getAddress } from "@ethersproject/address";
 
 const proposalId = "QmPDw5uewBgmVkw55fnm82TdqRKMhqf6EsP4RMu5sHFLGY";
@@ -26,9 +27,11 @@ function consolidateVotes(ops: Operator[], property: "owner" | "address") {
   return score;
 }
 
+type NoAmountOperator = Omit<Operator, "stakedAmount">
+
 function sortOperators(
-  op1: Omit<Operator, "stakedAmount">,
-  op2: Omit<Operator, "stakedAmount">
+  op1: NoAmountOperator,
+  op2: NoAmountOperator
 ) {
   if (op1.address < op2.address) {
     return -1;
@@ -45,7 +48,7 @@ function sortOperators(
   }
 }
 
-function processOpsForFullComparison(ops: Operator[]) {
+function processOpsForFullComparison(ops: NoAmountOperator[]) {
   return ops
     .map(({ owner, address }) => ({
       owner: getAddress(owner),
@@ -54,14 +57,15 @@ function processOpsForFullComparison(ops: Operator[]) {
     .sort(sortOperators);
 }
 
-function processOpsForOperatorComparison(ops: Operator[]) {
+function processOpsForOperatorComparison(ops: NoAmountOperator[]) {
   return ops.map((op) => op.address.toLowerCase()).sort();
 }
 
 (async () => {
   const block = await getProposalBock(proposalId);
   console.log(block);
-  const etherOps = await getAllOperators(block);
+  const etherOps = await getTbtcJsOperators(block);
+  //console.log((etherOps.sort((a,b)=>a.address.toLowerCase()>b.address.toLowerCase()?1:-1).map(a=>`${a.address.toLowerCase()}\t${a.owner}`).join("\n")))
   //const subgraphOps = await getVoterOperators(proposalId, block);
   const subgraphOps = await getAllSubgraphOperators(block);
   //console.log(etherOps, etherOps.sort(sortOperators))
@@ -72,6 +76,11 @@ function processOpsForOperatorComparison(ops: Operator[]) {
   const graph = processOpsForFullComparison(subgraphOps);
   const eth = processOpsForFullComparison(etherOps);
   for (let i = 0; i < subgraphOps.length; i++) {
+    try {
+        assert.deepStrictEqual(graph[i].address, eth[i].address);
+      } catch (e) {
+        console.warn(e);
+      }
     if (eth[i].owner === "0xDa534b567099Ca481384133bC121D5843F681365") {
       console.log("TokenStakingEscrow");
       console.log(eth[i].address, eth[i].owner);
@@ -80,11 +89,6 @@ function processOpsForOperatorComparison(ops: Operator[]) {
       console.log(eth[i].address, eth[i].owner);
     } else if (graph[i].owner !== eth[i].owner) {
       console.log(graph[i].address, graph[i].owner, eth[i].owner);
-    }
-    try {
-      assert.deepStrictEqual(graph[i].address, eth[i].address);
-    } catch (e) {
-      console.warn(e);
     }
   }
   assert.deepStrictEqual(graph, eth);
