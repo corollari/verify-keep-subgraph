@@ -2,13 +2,15 @@ import { Operator } from "./types";
 import {
   getVoterOperators,
   getAllOperators as getAllSubgraphOperators,
-} from "./getSubgraphOperators";
+} from "./getSubgraphOperators.js";
 import assert from "assert";
-import ethersVoteCount from "./ethersVoteCount";
-import getProposalBock from "./getProposalBlock";
-import { getAllOperators } from "./getEthersOperators";
-import snapshotVotesTest from "./snapshotVotesTest";
-import { getAddress } from "@ethersproject/address";
+import ethersVoteCount from "./ethersVoteCount.js";
+import getProposalBock from "./getProposalBlock.js";
+import { getAllOperators as getEthersOperators } from "./getEthersOperators.js";
+import snapshotVotesTest from "./snapshotVotesTest.js";
+import ethersAddress from "@ethersproject/address";
+const { getAddress } = ethersAddress
+import {getAllOperators as getTbtcJsOperators} from './getTbtcJsOperators.js'
 
 const proposalId = "QmPDw5uewBgmVkw55fnm82TdqRKMhqf6EsP4RMu5sHFLGY";
 
@@ -45,7 +47,7 @@ function sortOperators(
   }
 }
 
-function processOpsForFullComparison(ops: Operator[]) {
+function processOpsForFullComparison(ops: Omit<Operator, "stakedAmount">[]) {
   return ops
     .map(({ owner, address }) => ({
       owner: getAddress(owner),
@@ -54,14 +56,14 @@ function processOpsForFullComparison(ops: Operator[]) {
     .sort(sortOperators);
 }
 
-function processOpsForOperatorComparison(ops: Operator[]) {
+function processOpsForOperatorComparison(ops: Omit<Operator, "stakedAmount">[]) {
   return ops.map((op) => op.address.toLowerCase()).sort();
 }
 
 (async () => {
   const block = await getProposalBock(proposalId);
   console.log(block);
-  const etherOps = await getAllOperators(block);
+  const etherOps = await getTbtcJsOperators(block);
   //const subgraphOps = await getVoterOperators(proposalId, block);
   const subgraphOps = await getAllSubgraphOperators(block);
   //console.log(etherOps, etherOps.sort(sortOperators))

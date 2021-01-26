@@ -25,6 +25,8 @@ export async function getAllOperators(block: number) {
   const TokenGrantAbi = [
     "event TokenGrantStaked(uint256 indexed grantId, uint256 amount, address operator)",
     "function getGrant(uint256 _id) public view returns (uint256 amount,uint256 withdrawn,uint256 staked,uint256 revokedAmount,uint256 revokedAt,address grantee)",
+    "event TokenGrantRevoked(uint256 id)",
+    "event TokenGrantCreated(uint256 id)"
   ];
   const TokenGrant = new ethers.Contract(
     "0x175989c71Fd023D580C65F5dC214002687ff88B7",
@@ -36,6 +38,11 @@ export async function getAllOperators(block: number) {
     0,
     block
   );
+  console.log((await TokenGrant.queryFilter(
+    TokenGrant.filters.TokenGrantCreated(),
+    0,
+    block
+  )).filter(a=>a.args!.id.toNumber()===150))
 
   const ManagedGrantAbi = [
     "event GranteeReassignmentConfirmed(address oldGrantee,address newGrantee)",

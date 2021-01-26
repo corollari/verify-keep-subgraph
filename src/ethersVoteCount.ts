@@ -1,10 +1,11 @@
-import { BigNumber, ethers } from "ethers";
+import ethers from "ethers";
+const {BigNumber} = ethers;
 import { Operator } from "./types";
 
 interface DelegationInfo {
-  amount: BigNumber;
-  createdAt: BigNumber;
-  undelegatedAt: BigNumber;
+  amount: any;
+  createdAt: typeof BigNumber;
+  undelegatedAt: typeof BigNumber;
 }
 
 const e18 = BigNumber.from(10).pow(18);
