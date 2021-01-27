@@ -5,7 +5,7 @@ import {
 } from "./getSubgraphOperators";
 import assert from "assert";
 import ethersVoteCount from "./ethersVoteCount";
-import getProposalBock from "./getProposalBlock";
+import getProposalBock, {getVoters} from "./getProposalBlock";
 import { getAllOperators as getEthersOperators } from "./getEthersOperators";
 import { getAllOperators as getTbtcJsOperators } from "./getTbtcJsOperators";
 import snapshotVotesTest from "./data/snapshotVotesTest";
@@ -61,17 +61,19 @@ function processOpsForOperatorComparison(ops: NoAmountOperator[]) {
 (async () => {
   const block = await getProposalBock(proposalId);
   console.log(block);
-  const etherOps = await getTbtcJsOperators(block);
+  const subgraphOps = await getVoterOperators(proposalId, block);
+  const etherOps = await getVoterOperators(proposalId, block)
+  const voters = await getVoters(proposalId);
+  const etherVoters = etherOps.filter(op=>voters.some(voter=>op.owner.toLowerCase()===voter))
   //console.log((etherOps.sort((a,b)=>a.address.toLowerCase()>b.address.toLowerCase()?1:-1).map(a=>`${a.address.toLowerCase()}\t${a.owner}`).join("\n")))
   //const subgraphOps = await getVoterOperators(proposalId, block);
-  const subgraphOps = await getAllSubgraphOperators(block);
   //console.log(etherOps, etherOps.sort(sortOperators))
   assert.deepStrictEqual(
-    processOpsForOperatorComparison(etherOps),
+    processOpsForOperatorComparison(etherVoters),
     processOpsForOperatorComparison(subgraphOps)
   );
   const graph = processOpsForFullComparison(subgraphOps);
-  const eth = processOpsForFullComparison(etherOps);
+  const eth = processOpsForFullComparison(etherVoters);
   for (let i = 0; i < subgraphOps.length; i++) {
     try {
       assert.deepStrictEqual(graph[i].address, eth[i].address);
@@ -90,7 +92,7 @@ function processOpsForOperatorComparison(ops: NoAmountOperator[]) {
   }
   assert.deepStrictEqual(graph, eth);
   const subgraphVotes = consolidateVotes(subgraphOps, "owner");
-  const ethersVotes = await ethersVoteCount(subgraphOps, block).then((votes) =>
+  const ethersVotes = await ethersVoteCount(etherVoters, block).then((votes) =>
     consolidateVotes(votes, "owner")
   );
   assert.deepStrictEqual(subgraphVotes, ethersVotes);
