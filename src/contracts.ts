@@ -2,7 +2,10 @@ import { ethers } from "ethers";
 
 import StakingPortBackerJSON from "@keep-network/keep-core/artifacts/StakingPortBacker.json";
 
-const provider = new ethers.providers.AlchemyProvider('mainnet',process.env["ALCHEMY_API"]);
+const provider = new ethers.providers.AlchemyProvider(
+  "mainnet",
+  process.env["ALCHEMY_API"]
+);
 
 const TokenStakingAbi = [
   "event StakeDelegated(address indexed owner,address indexed operator)",

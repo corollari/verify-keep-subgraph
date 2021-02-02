@@ -37,19 +37,21 @@ export function getOwners(operators: string[], blockTag: number) {
 export async function lookupOwner(operator: string, blockTag: number) {
   while (true) {
     try {
-      const owner = await TokenStaking.ownerOf(operator, { blockTag }).then((owner: string) => {
-        try {
-          return resolveOwner(owner, operator, blockTag);
-        } catch (e) {
-          return `Unknown (${e})`;
+      const owner = await TokenStaking.ownerOf(operator, { blockTag }).then(
+        (owner: string) => {
+          try {
+            return resolveOwner(owner, operator, blockTag);
+          } catch (e) {
+            return `Unknown (${e})`;
+          }
         }
-      });
-      return owner
+      );
+      return owner;
     } catch (e) {
-      if(e.code === "TIMEOUT"){
+      if (e.code === "TIMEOUT") {
         continue;
       } else {
-        console.log("lookup", e)
+        console.log("lookup", e);
       }
     }
   }
@@ -88,14 +90,14 @@ async function resolveOwner(
   } else {
     // If it's not a known singleton contract, try to see if it's a
     // TokenGrantStake; if not, assume it's an owner-controlled contract.
-    while(true){
-    try {
-      const [{ transactionHash }] = await TokenStaking.queryFilter(
-        TokenStaking.filters.StakeDelegated(null, operator),
-        0,
-        blockTag
-      );
-      /*
+    while (true) {
+      try {
+        const [{ transactionHash }] = await TokenStaking.queryFilter(
+          TokenStaking.filters.StakeDelegated(null, operator),
+          0,
+          blockTag
+        );
+        /*
         const {
           transactionHash
         } = await EthereumHelpers.getExistingEvent(
@@ -104,41 +106,41 @@ async function resolveOwner(
           { operator }
         )
         */
-      const { logs } = await provider.getTransactionReceipt(transactionHash);
-      /*
+        const { logs } = await provider.getTransactionReceipt(transactionHash);
+        /*
         const TokenGrantStakedABI = TokenGrantABI.filter(
           _ => _.type == "event" && _.name == "TokenGrantStaked"
         )[0]
         console.log((TokenGrantStakedABI as any))
         */
-      let grantId = null;
-      // eslint-disable-next-line guard-for-in
-      for (const i in logs) {
-        const { data, topics } = logs[i];
-        // @ts-ignore Oh but there is a signature property on events foo'.
-        if (topics[0] == TokenGrantStakedABI.signature) {
-          const decoded = web3.eth.abi.decodeLog(
-            TokenGrantStakedABI.inputs,
-            data,
-            topics.slice(1)
-          );
-          grantId = decoded.grantId;
-          break;
+        let grantId = null;
+        // eslint-disable-next-line guard-for-in
+        for (const i in logs) {
+          const { data, topics } = logs[i];
+          // @ts-ignore Oh but there is a signature property on events foo'.
+          if (topics[0] == TokenGrantStakedABI.signature) {
+            const decoded = web3.eth.abi.decodeLog(
+              TokenGrantStakedABI.inputs,
+              data,
+              topics.slice(1)
+            );
+            grantId = decoded.grantId;
+            break;
+          }
         }
-      }
 
-      const { grantee } = await TokenGrant.getGrant(grantId, { blockTag });
-      return resolveGrantee(grantee, blockTag);
-    } catch (e) {
-      if(e.code === "TIMEOUT"){
-        continue;
+        const { grantee } = await TokenGrant.getGrant(grantId, { blockTag });
+        return resolveGrantee(grantee, blockTag);
+      } catch (e) {
+        if (e.code === "TIMEOUT") {
+          continue;
+        }
+        // If we threw, assume this isn't a TokenGrantStake and the
+        // owner is just an unknown contract---e.g. Gnosis Safe.
+        return owner;
       }
-      // If we threw, assume this isn't a TokenGrantStake and the
-      // owner is just an unknown contract---e.g. Gnosis Safe.
-      return owner;
     }
   }
-}
 }
 
 const TokenGrantStakedABI = {
@@ -175,22 +177,22 @@ async function resolveGrantee(
   /** @type {string} */ grantee: string,
   blockTag: number
 ) {
-  while(true){
-  if ((await provider.getStorageAt(grantee, 0)) === "0x") {
-    return grantee; // grantee is already a user-owned account
-  } else {
-    try {
-      const grant = new ethers.Contract(grantee, ManagedGrantABI, provider);
+  while (true) {
+    if ((await provider.getStorageAt(grantee, 0)) === "0x") {
+      return grantee; // grantee is already a user-owned account
+    } else {
+      try {
+        const grant = new ethers.Contract(grantee, ManagedGrantABI, provider);
 
-      return await grant.grantee({ blockTag });
-    } catch (e) {
-      if(e.code === "TIMEOUT"){
-        continue;
+        return await grant.grantee({ blockTag });
+      } catch (e) {
+        if (e.code === "TIMEOUT") {
+          continue;
+        }
+        // If we threw, assume this isn't a ManagedGrant and the
+        // grantee is just an unknown contract---e.g. Gnosis Safe.
+        return grantee;
       }
-      // If we threw, assume this isn't a ManagedGrant and the
-      // grantee is just an unknown contract---e.g. Gnosis Safe.
-      return grantee;
     }
   }
-}
 }

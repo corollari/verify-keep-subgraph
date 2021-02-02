@@ -5,7 +5,7 @@ import {
 } from "./getSubgraphOperators";
 import assert from "assert";
 import ethersVoteCount from "./ethersVoteCount";
-import getProposalBock, {getVoters} from "./getProposalBlock";
+import getProposalBock, { getVoters } from "./getProposalBlock";
 import { getAllOperators as getEthersOperators } from "./getEthersOperators";
 import { getAllOperators as getTbtcJsOperators } from "./getTbtcJsOperators";
 import snapshotVotesTest from "./data/snapshotVotesTest";
@@ -57,10 +57,10 @@ function processOpsForOperatorComparison(ops: NoAmountOperator[]) {
 }
 
 (async () => {
-  const block =  11101505//await getProposalBock(proposalId);
+  const block = 10916486; //await getProposalBock(proposalId);
   console.log(block);
   const subgraphOps = await getAllSubgraphOperators(block);
-  const etherOps = await getTbtcJsOperators(block)
+  const etherOps = await getTbtcJsOperators(block);
   //console.log(etherOps)
   //const voters = await getVoters(proposalId);
   //const etherVoters = etherOps.filter(op=>voters.some(voter=>op.owner.toLowerCase()===voter))
