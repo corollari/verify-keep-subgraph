@@ -3,3 +3,5 @@ export interface Operator {
   owner: string;
   stakedAmount: string;
 }
+
+export type NoAmountOperator = Omit<Operator, "stakedAmount">;

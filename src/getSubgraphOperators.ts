@@ -31,7 +31,7 @@ export async function getVoterOperators(proposalId: string, block: number) {
 
 export async function getAllOperators(block: number) {
   const ops: SubgraphResponse = await fetch(
-    "https://api.thegraph.com/subgraphs/name/miracle2k/all-the-keeps",
+    "https://api.thegraph.com/subgraphs/name/corollari/atktest2",
     {
       method: "POST",
       body: JSON.stringify({

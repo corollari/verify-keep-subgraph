@@ -1,4 +1,4 @@
-import { Operator } from "./types";
+import { Operator, NoAmountOperator } from "./types";
 import {
   getVoterOperators,
   getAllOperators as getAllSubgraphOperators,
@@ -26,8 +26,6 @@ function consolidateVotes(ops: Operator[], property: "owner" | "address") {
   });
   return score;
 }
-
-type NoAmountOperator = Omit<Operator, "stakedAmount">;
 
 function sortOperators(op1: NoAmountOperator, op2: NoAmountOperator) {
   if (op1.address < op2.address) {
@@ -59,21 +57,22 @@ function processOpsForOperatorComparison(ops: NoAmountOperator[]) {
 }
 
 (async () => {
-  const block = await getProposalBock(proposalId);
+  const block =  11101505//await getProposalBock(proposalId);
   console.log(block);
-  const subgraphOps = await getVoterOperators(proposalId, block);
-  const etherOps = await getVoterOperators(proposalId, block)
-  const voters = await getVoters(proposalId);
-  const etherVoters = etherOps.filter(op=>voters.some(voter=>op.owner.toLowerCase()===voter))
+  const subgraphOps = await getAllSubgraphOperators(block);
+  const etherOps = await getTbtcJsOperators(block)
+  //console.log(etherOps)
+  //const voters = await getVoters(proposalId);
+  //const etherVoters = etherOps.filter(op=>voters.some(voter=>op.owner.toLowerCase()===voter))
   //console.log((etherOps.sort((a,b)=>a.address.toLowerCase()>b.address.toLowerCase()?1:-1).map(a=>`${a.address.toLowerCase()}\t${a.owner}`).join("\n")))
   //const subgraphOps = await getVoterOperators(proposalId, block);
   //console.log(etherOps, etherOps.sort(sortOperators))
   assert.deepStrictEqual(
-    processOpsForOperatorComparison(etherVoters),
+    processOpsForOperatorComparison(etherOps),
     processOpsForOperatorComparison(subgraphOps)
   );
   const graph = processOpsForFullComparison(subgraphOps);
-  const eth = processOpsForFullComparison(etherVoters);
+  const eth = processOpsForFullComparison(etherOps);
   for (let i = 0; i < subgraphOps.length; i++) {
     try {
       assert.deepStrictEqual(graph[i].address, eth[i].address);
@@ -92,7 +91,7 @@ function processOpsForOperatorComparison(ops: NoAmountOperator[]) {
   }
   assert.deepStrictEqual(graph, eth);
   const subgraphVotes = consolidateVotes(subgraphOps, "owner");
-  const ethersVotes = await ethersVoteCount(etherVoters, block).then((votes) =>
+  const ethersVotes = await ethersVoteCount(etherOps, block).then((votes) =>
     consolidateVotes(votes, "owner")
   );
   assert.deepStrictEqual(subgraphVotes, ethersVotes);

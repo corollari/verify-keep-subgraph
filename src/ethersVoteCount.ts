@@ -1,5 +1,6 @@
 import { BigNumber, ethers } from "ethers";
-import { Operator } from "./types";
+import { NoAmountOperator } from "./types";
+import {TokenStaking} from './contracts'
 
 interface DelegationInfo {
   amount: BigNumber;
@@ -9,27 +10,20 @@ interface DelegationInfo {
 
 const e18 = BigNumber.from(10).pow(18);
 
-// Improvement: Obtain the operators from blockchain events
-export default async function etherStrategy(ops: Operator[], block: number) {
-  const provider = new ethers.providers.JsonRpcProvider(process.env["ETH_RPC"]);
-
-  const abi = [
-    "function getDelegationInfo(address _operator) public view returns (uint256 amount, uint256 createdAt, uint256 undelegatedAt)",
-  ];
-  const contract = new ethers.Contract(
-    "0x1293a54e160D1cd7075487898d65266081A15458",
-    abi,
-    provider
-  );
-
+export default async function etherStrategy(ops: NoAmountOperator[], block: number) {
   const opStakes = await Promise.all(
     ops.map(async (op) => {
       const address = op.address;
-      const stakedAmount = await contract
+      let stakedAmount:string = "0";;
+      try{
+       stakedAmount = await TokenStaking
         .getDelegationInfo(address, {
           blockTag: block,
         })
-        .then((res: DelegationInfo) => res.amount.div(e18).toNumber());
+        .then((res: DelegationInfo) => res.amount.div(e18).toString().split('.')[0]);
+      } catch(e){
+        console.log("voteCount", e)
+      }
       return {
         owner: op.owner,
         stakedAmount,

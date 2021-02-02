@@ -2,12 +2,13 @@ import { ethers } from "ethers";
 
 import StakingPortBackerJSON from "@keep-network/keep-core/artifacts/StakingPortBacker.json";
 
-const provider = new ethers.providers.JsonRpcProvider(process.env["ETH_RPC"]);
+const provider = new ethers.providers.AlchemyProvider('mainnet',process.env["ALCHEMY_API"]);
 
 const TokenStakingAbi = [
   "event StakeDelegated(address indexed owner,address indexed operator)",
   "event StakeOwnershipTransferred(address indexed operator,address indexed newOwner)",
   "function ownerOf(address _operator) public view returns (address)",
+  "function getDelegationInfo(address _operator) public view returns (uint256 amount, uint256 createdAt, uint256 undelegatedAt)",
 ];
 const TokenStaking = new ethers.Contract(
   "0x1293a54e160D1cd7075487898d65266081A15458",

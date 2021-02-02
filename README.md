@@ -1,5 +1,5 @@
 ```
 npm i
-export ETH_RPC="https://eth-mainnet.alchemyapi.io/v2/XXXXXXXXX"
+export ALCHEMY_API="XXXXXXXXX" # Extracted from https://eth-mainnet.alchemyapi.io/v2/XXXXXXXXX
 npm start
 ```

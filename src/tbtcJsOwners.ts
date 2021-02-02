@@ -34,14 +34,25 @@ export function getOwners(operators: string[], blockTag: number) {
   );
 }
 
-export function lookupOwner(operator: string, blockTag: number) {
-  return TokenStaking.ownerOf(operator, { blockTag }).then((owner: string) => {
+export async function lookupOwner(operator: string, blockTag: number) {
+  while (true) {
     try {
-      return resolveOwner(owner, operator, blockTag);
+      const owner = await TokenStaking.ownerOf(operator, { blockTag }).then((owner: string) => {
+        try {
+          return resolveOwner(owner, operator, blockTag);
+        } catch (e) {
+          return `Unknown (${e})`;
+        }
+      });
+      return owner
     } catch (e) {
-      return `Unknown (${e})`;
+      if(e.code === "TIMEOUT"){
+        continue;
+      } else {
+        console.log("lookup", e)
+      }
     }
-  });
+  }
 }
 
 async function resolveOwner(
@@ -77,6 +88,7 @@ async function resolveOwner(
   } else {
     // If it's not a known singleton contract, try to see if it's a
     // TokenGrantStake; if not, assume it's an owner-controlled contract.
+    while(true){
     try {
       const [{ transactionHash }] = await TokenStaking.queryFilter(
         TokenStaking.filters.StakeDelegated(null, operator),
@@ -117,12 +129,16 @@ async function resolveOwner(
 
       const { grantee } = await TokenGrant.getGrant(grantId, { blockTag });
       return resolveGrantee(grantee, blockTag);
-    } catch (_) {
+    } catch (e) {
+      if(e.code === "TIMEOUT"){
+        continue;
+      }
       // If we threw, assume this isn't a TokenGrantStake and the
       // owner is just an unknown contract---e.g. Gnosis Safe.
       return owner;
     }
   }
+}
 }
 
 const TokenGrantStakedABI = {
@@ -159,6 +175,7 @@ async function resolveGrantee(
   /** @type {string} */ grantee: string,
   blockTag: number
 ) {
+  while(true){
   if ((await provider.getStorageAt(grantee, 0)) === "0x") {
     return grantee; // grantee is already a user-owned account
   } else {
@@ -166,10 +183,14 @@ async function resolveGrantee(
       const grant = new ethers.Contract(grantee, ManagedGrantABI, provider);
 
       return await grant.grantee({ blockTag });
-    } catch (_) {
+    } catch (e) {
+      if(e.code === "TIMEOUT"){
+        continue;
+      }
       // If we threw, assume this isn't a ManagedGrant and the
       // grantee is just an unknown contract---e.g. Gnosis Safe.
       return grantee;
     }
   }
+}
 }
